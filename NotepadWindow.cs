@@ -11,7 +11,7 @@ namespace Plugins.Machination.Notepad
         private const string MenuDir = "Tools/Machination/";
         private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
         private string _text = "";
-        private static string _filePath = "NotepadText.txt";
+        private static string _filePath = "Note.txt";
         private bool _hasUnsavedChanges;
         private string[] _files;
         private int _selectedFileIndex;
@@ -74,6 +74,10 @@ namespace Plugins.Machination.Notepad
             if (GUILayout.Button("Reload"))
             {
                 LoadFiles();
+            }
+            if (GUILayout.Button("New File"))
+            {
+                CreateNewFile();
             }
             EditorGUILayout.EndHorizontal();
 
@@ -155,6 +159,31 @@ namespace Plugins.Machination.Notepad
             {
                 _files = new string[0];
                 Debug.LogWarning("Notes folder not found: " + notesFolderFullPath);
+            }
+        }
+
+        private void CreateNewFile()
+        {
+            string newFileName = EditorUtility.SaveFilePanel("Create New File", "Assets/" + NotesFolder, "NewNote", "txt");
+            if (!string.IsNullOrEmpty(newFileName))
+            {
+                newFileName = Path.GetFileName(newFileName);
+                var fullPath = Path.Combine("Assets", NotesFolder, newFileName);
+                if (!File.Exists(fullPath))
+                {
+                    File.WriteAllText(fullPath, "");
+                    AssetDatabase.Refresh();
+                    LoadFiles();
+                    _selectedFileIndex = Array.IndexOf(_files, newFileName);
+                    _filePath = newFileName;
+                    _text = "";
+                    _hasUnsavedChanges = false;
+                    UpdateWindowTitle();
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog("File Exists", "A file with that name already exists. Please choose a different name.", "OK");
+                }
             }
         }
     }
