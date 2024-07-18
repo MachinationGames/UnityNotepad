@@ -18,6 +18,8 @@ namespace Plugins.Machination.Notepad
         private GUIStyle _textAreaStyle;
         private Font _customFont;
         private Vector2 _scrollPosition;
+        private int _fontSize = 14;
+        private string _fontSizeInput = "14";
 
         private static bool UseCustomFont
         {
@@ -83,6 +85,10 @@ namespace Plugins.Machination.Notepad
             if (GUILayout.Button("New File")) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
             EditorGUILayout.EndHorizontal();
 
+            EditorGUILayout.BeginHorizontal();
+            RenderFontSizeInput();
+            EditorGUILayout.EndHorizontal();
+            
             RenderTextArea();
         }
 
@@ -230,7 +236,7 @@ namespace Plugins.Machination.Notepad
                 {
                     _textAreaStyle = new GUIStyle(GUI.skin.textArea)
                     {
-                        font = _customFont, fontSize = 14
+                        font = _customFont, fontSize = _fontSize
                     };
                 }
                 else
@@ -243,6 +249,19 @@ namespace Plugins.Machination.Notepad
             {
                 _textAreaStyle = new GUIStyle(GUI.skin.textArea);
             }
+        }
+
+        private void RenderFontSizeInput()
+        {
+            GUILayout.Label("Font Size:");
+            _fontSize = EditorGUILayout.IntSlider(_fontSize, 10, 30);
+
+            // Input Field Option
+            //_fontSizeInput = GUILayout.TextField(_fontSizeInput, GUILayout.Width(40));
+
+            // if (!int.TryParse(_fontSizeInput, out var newFontSize)) return;
+            // _fontSize = Mathf.Clamp(newFontSize, 10, 30);
+            // LoadCustomFont();
         }
     }
 }
