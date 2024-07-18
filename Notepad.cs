@@ -26,7 +26,6 @@ namespace Plugins.Machination.Notepad
         }
 
         #region Text
-
         private const string CustomFont = "Toggle Monospace Font";
         private const string UnsavedChanges = "Unsaved Changes";
         private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
@@ -57,20 +56,11 @@ namespace Plugins.Machination.Notepad
             EditorApplication.quitting += OnEditorQuitting;
         }
         
-        private void OnDisable()
-        {
-            EditorApplication.quitting -= OnEditorQuitting;
-        }
+        private void OnDisable() { EditorApplication.quitting -= OnEditorQuitting; }
         
-        private void OnEditorQuitting()
-        {
-            CheckForUnsavedChanges();
-        }
+        private void OnEditorQuitting() { CheckForUnsavedChanges(); }
         
-        private void OnDestroy()
-        {
-            CheckForUnsavedChanges();
-        }
+        private void OnDestroy() { CheckForUnsavedChanges(); }
         
         private void CheckForUnsavedChanges()
         {
@@ -80,10 +70,7 @@ namespace Plugins.Machination.Notepad
             }
         }
         
-        private void UpdateWindowTitle()
-        {
-            titleContent.text = "Notepad" + (_hasUnsavedChanges ? " *" : "");
-        }
+        private void UpdateWindowTitle() { titleContent.text = "Notepad" + (_hasUnsavedChanges ? " *" : ""); }
 
         private void OnGUI()
         {
@@ -91,29 +78,16 @@ namespace Plugins.Machination.Notepad
             LoadCustomFont();
             
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("Select File:");
-            var newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
-            if (newSelectedFileIndex != _selectedFileIndex)
-            {
-                if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
-                {
-                    SaveTextToFile();
-                }
-
-                _selectedFileIndex = newSelectedFileIndex;
-                _filePath = _files[_selectedFileIndex];
-                LoadTextFromFile();
-            }
-            if (GUILayout.Button("Reload"))
-            {
-                LoadFiles();
-            }
-            if (GUILayout.Button("New File"))
-            {
-                CheckForUnsavedChangesBeforeCreatingNewFile();
-            }
+            RenderFileSelection();
+            if (GUILayout.Button("Reload")) { LoadFiles(); }
+            if (GUILayout.Button("New File")) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
             EditorGUILayout.EndHorizontal();
 
+            RenderTextArea();
+        }
+
+        private void RenderTextArea()
+        {
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             
             var newText = EditorGUILayout.TextArea(_text, _textAreaStyle, GUILayout.ExpandHeight(true));
@@ -123,6 +97,28 @@ namespace Plugins.Machination.Notepad
             _text = newText;
             _hasUnsavedChanges = true;
             UpdateWindowTitle();
+        }
+
+        private void RenderFileSelection()
+        {
+            GUILayout.Label("Select File:");
+            var newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
+            if (newSelectedFileIndex != _selectedFileIndex)
+            {
+                HandleFileSelectionChange(newSelectedFileIndex);
+            }
+        }
+
+        private void HandleFileSelectionChange(int newSelectedFileIndex)
+        {
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
+            {
+                SaveTextToFile();
+            }
+
+            _selectedFileIndex = newSelectedFileIndex;
+            _filePath = _files[_selectedFileIndex];
+            LoadTextFromFile();
         }
 
         private void HandleShortcuts()
@@ -188,7 +184,7 @@ namespace Plugins.Machination.Notepad
             }
             else
             {
-                _files = new string[0];
+                _files = Array.Empty<string>();
                 Debug.LogWarning("Notes folder not found: " + notesFolderFullPath);
             }
         }
@@ -230,7 +226,7 @@ namespace Plugins.Machination.Notepad
             if (UseCustomFont)
             {
                 _customFont = (Font)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Fonts/CourierPrime.ttf", typeof(Font));
-                if (_customFont != null)
+                if (_customFont)
                 {
                     _textAreaStyle = new GUIStyle(GUI.skin.textArea)
                     {
