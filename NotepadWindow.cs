@@ -11,7 +11,7 @@ namespace Plugins.Machination.Notepad
         private const string MenuDir = "Tools/Machination/";
         private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
         private string _text = "";
-        private static string _filePath = "Note.txt";
+        private static string _filePath = "NewNote";
         private bool _hasUnsavedChanges;
         private string[] _files;
         private int _selectedFileIndex;
@@ -77,7 +77,7 @@ namespace Plugins.Machination.Notepad
             }
             if (GUILayout.Button("New File"))
             {
-                CreateNewFile();
+                CheckForUnsavedChangesBeforeCreatingNewFile();
             }
             EditorGUILayout.EndHorizontal();
 
@@ -160,6 +160,15 @@ namespace Plugins.Machination.Notepad
                 _files = new string[0];
                 Debug.LogWarning("Notes folder not found: " + notesFolderFullPath);
             }
+        }
+
+        private void CheckForUnsavedChangesBeforeCreatingNewFile()
+        {
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog("Unsaved Changes", "You have unsaved changes. Do you want to save before creating a new file?", "Yes", "No"))
+            {
+                SaveTextToFile();
+            }
+            CreateNewFile();
         }
 
         private void CreateNewFile()
