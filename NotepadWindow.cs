@@ -1,25 +1,29 @@
 using System;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace Machination.Plugins.Machination.Notepad
+namespace Plugins.Machination.Notepad
 {
     public class NotepadWindow : EditorWindow
     {
         private const string MenuDir = "Tools/Machination/";
-        private const string DefaultFilePath = "Plugins/Machination/Notepad/NotepadText.txt";
+        private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
         private string _text = "";
-        private static string _filePath = DefaultFilePath;
+        private static string _filePath = "NotepadText.txt";
         private DateTime _lastSaveTime;
         private bool _hasUnsavedChanges;
-        
+        private string[] _files;
+        private int _selectedFileIndex;
+
         [MenuItem(MenuDir + "Notepad")]
         public static void ShowWindow() { GetWindow<NotepadWindow>("Notepad"); }
         
         private void OnEnable()
         {
+            LoadFiles();
             LoadTextFromFile();
             LoadLastSaveTime();
             EditorApplication.quitting += OnEditorQuitting;
@@ -56,6 +60,16 @@ namespace Machination.Plugins.Machination.Notepad
         {
             HandleShortcuts();
             
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Label("Select File:");
+            _selectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
+            if (GUILayout.Button("Load"))
+            {
+                _filePath = _files[_selectedFileIndex];
+                LoadTextFromFile();
+            }
+            EditorGUILayout.EndHorizontal();
+
             var newText = EditorGUILayout.TextArea(_text, GUILayout.ExpandHeight(true));
             if (newText != _text)
             {
@@ -64,11 +78,6 @@ namespace Machination.Plugins.Machination.Notepad
                 UpdateWindowTitle();
             }
 
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("File Path: Assets/");
-            _filePath = EditorGUILayout.TextField(_filePath);
-            GUILayout.EndHorizontal();
-            
             GUILayout.Label("Last saved: " + (_lastSaveTime == default ? "Never" : _lastSaveTime.ToString(CultureInfo.InvariantCulture)));
         }
 
@@ -84,7 +93,8 @@ namespace Machination.Plugins.Machination.Notepad
         {
             try
             {
-                File.WriteAllText(Path.Combine("Assets", _filePath), _text);
+                var fullPath = Path.Combine("Assets", NotesFolder, _filePath);
+                File.WriteAllText(fullPath, _text);
                 AssetDatabase.Refresh();
                 _lastSaveTime = DateTime.Now;
                 EditorPrefs.SetString("NotepadLastSaveTime", _lastSaveTime.ToString(CultureInfo.InvariantCulture));
@@ -101,7 +111,7 @@ namespace Machination.Plugins.Machination.Notepad
         {
             try
             {
-                var fullPath = Path.Combine("Assets", _filePath);
+                var fullPath = Path.Combine("Assets", NotesFolder, _filePath);
                 if (File.Exists(fullPath))
                 {
                     _text = File.ReadAllText(fullPath);
@@ -110,7 +120,7 @@ namespace Machination.Plugins.Machination.Notepad
                 }
                 else
                 {
-                    Debug.LogWarning("Notepad file not found: Assets/" + _filePath);
+                    Debug.LogWarning("Notepad file not found: " + fullPath);
                 }
             }
             catch (Exception e)
@@ -125,6 +135,31 @@ namespace Machination.Plugins.Machination.Notepad
             if (!string.IsNullOrEmpty(lastSaveTimeStr))
             {
                 _lastSaveTime = DateTime.Parse(lastSaveTimeStr);
+            }
+        }
+
+        private void LoadFiles()
+        {
+            var notesFolderFullPath = Path.Combine("Assets", NotesFolder);
+            if (Directory.Exists(notesFolderFullPath))
+            {
+                _files = Directory.GetFiles(notesFolderFullPath)
+                                  .Select(Path.GetFileName)
+                                  .ToArray();
+                if (_files.Length > 0)
+                {
+                    _selectedFileIndex = Array.IndexOf(_files, _filePath);
+                    if (_selectedFileIndex == -1)
+                    {
+                        _selectedFileIndex = 0;
+                        _filePath = _files[_selectedFileIndex];
+                    }
+                }
+            }
+            else
+            {
+                _files = new string[0];
+                Debug.LogWarning("Notes folder not found: " + notesFolderFullPath);
             }
         }
     }
