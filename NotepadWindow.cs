@@ -65,6 +65,11 @@ namespace Plugins.Machination.Notepad
             int newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
             if (newSelectedFileIndex != _selectedFileIndex)
             {
+                if (_hasUnsavedChanges && EditorUtility.DisplayDialog("Unsaved Changes", "You have unsaved changes. Do you want to save before switching files?", "Yes", "No"))
+                {
+                    SaveTextToFile();
+                }
+
                 _selectedFileIndex = newSelectedFileIndex;
                 _filePath = _files[_selectedFileIndex];
                 LoadTextFromFile();
