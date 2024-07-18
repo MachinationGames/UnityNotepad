@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Plugins.Machination.Notepad
 {
-    public class NotepadWindow : EditorWindow
+    public class Notepad : EditorWindow
     {
         private const string MenuDir = "Tools/Machination/";
         private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
@@ -17,7 +17,7 @@ namespace Plugins.Machination.Notepad
         private int _selectedFileIndex;
 
         [MenuItem(MenuDir + "Notepad")]
-        public static void ShowWindow() { GetWindow<NotepadWindow>("Notepad"); }
+        public static void ShowWindow() { GetWindow<Notepad>("Notepad"); }
         
         private void OnEnable()
         {
