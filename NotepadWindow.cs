@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -13,7 +12,6 @@ namespace Plugins.Machination.Notepad
         private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
         private string _text = "";
         private static string _filePath = "NotepadText.txt";
-        private DateTime _lastSaveTime;
         private bool _hasUnsavedChanges;
         private string[] _files;
         private int _selectedFileIndex;
@@ -25,7 +23,6 @@ namespace Plugins.Machination.Notepad
         {
             LoadFiles();
             LoadTextFromFile();
-            LoadLastSaveTime();
             EditorApplication.quitting += OnEditorQuitting;
         }
         private void OnDisable()
@@ -87,8 +84,6 @@ namespace Plugins.Machination.Notepad
                 _hasUnsavedChanges = true;
                 UpdateWindowTitle();
             }
-
-            GUILayout.Label("Last saved: " + (_lastSaveTime == default ? "Never" : _lastSaveTime.ToString(CultureInfo.InvariantCulture)));
         }
 
         private void HandleShortcuts()
@@ -106,8 +101,6 @@ namespace Plugins.Machination.Notepad
                 var fullPath = Path.Combine("Assets", NotesFolder, _filePath);
                 File.WriteAllText(fullPath, _text);
                 AssetDatabase.Refresh();
-                _lastSaveTime = DateTime.Now;
-                EditorPrefs.SetString("NotepadLastSaveTime", _lastSaveTime.ToString(CultureInfo.InvariantCulture));
                 _hasUnsavedChanges = false;
                 UpdateWindowTitle();
             }
@@ -136,15 +129,6 @@ namespace Plugins.Machination.Notepad
             catch (Exception e)
             {
                 Debug.LogError("Failed to load Notepad: " + e.Message);
-            }
-        }
-
-        private void LoadLastSaveTime()
-        {
-            var lastSaveTimeStr = EditorPrefs.GetString("NotepadLastSaveTime", "");
-            if (!string.IsNullOrEmpty(lastSaveTimeStr))
-            {
-                _lastSaveTime = DateTime.Parse(lastSaveTimeStr);
             }
         }
 
