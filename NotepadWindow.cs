@@ -69,6 +69,10 @@ namespace Plugins.Machination.Notepad
                 _filePath = _files[_selectedFileIndex];
                 LoadTextFromFile();
             }
+            if (GUILayout.Button("Reload"))
+            {
+                LoadFiles();
+            }
             EditorGUILayout.EndHorizontal();
 
             var newText = EditorGUILayout.TextArea(_text, GUILayout.ExpandHeight(true));
