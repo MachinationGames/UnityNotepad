@@ -9,10 +9,12 @@ This Unity Editor extension provides a simple notepad window within the Unity Ed
 - **Create New File**: Quickly create new text files with a unique timestamped name.
 
 ## Installation
-- Copy the **NotepadWindow.cs** script into your Unity project's **Assets/Plugins/Machination/Notepad** folder.
+- Copy the files into your Unity project's **Assets/Plugins/Machination/Notepad** folder.
 - Create a **Notes** folder within **Assets/Plugins/Machination/Notepad** to store your text files.
+- Create a **Fonts** folder within **Assets/Plugins/Machination/Notepad** to store your custom font files.
 
 ## Usage
 - Open the Notepad window via **Tools > Machination > Notepad** in the Unity Editor menu.
+- Open the Notepad window via **Tools > Machination > Notepad** to toggle custom font.
 - Use the dropdown to select or create text files.
 - Edit and save your notes directly in the Unity Editor.
