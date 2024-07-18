@@ -145,6 +145,7 @@ namespace Plugins.Machination.Notepad
             if (Directory.Exists(notesFolderFullPath))
             {
                 _files = Directory.GetFiles(notesFolderFullPath)
+                                  .Where(file => !file.EndsWith(".meta"))
                                   .Select(Path.GetFileName)
                                   .ToArray();
                 if (_files.Length > 0)
