@@ -19,6 +19,8 @@ namespace Plugins.Machination.Notepad
         private Font _customFont;
         private Vector2 _scrollPosition;
 
+        private static bool _useCustomFont = true;
+
         #region Text
         private const string UnsavedChanges = "Unsaved Changes";
         private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
@@ -28,6 +30,12 @@ namespace Plugins.Machination.Notepad
 
         [MenuItem(MenuDir + "Notepad")]
         public static void ShowWindow() { GetWindow<Notepad>("Notepad"); }
+
+        [MenuItem(MenuDir + "Toggle Custom Font")]
+        private static void ToggleCustomFont()
+        {
+            _useCustomFont = !_useCustomFont;
+        }
         
         private void OnEnable()
         {
@@ -208,18 +216,24 @@ namespace Plugins.Machination.Notepad
 
         private void LoadCustomFont()
         {
-            _customFont = (Font)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Fonts/CourierPrime.ttf",
-                typeof(Font));
-            if (_customFont != null)
+            if (_useCustomFont)
             {
-                _textAreaStyle = new GUIStyle(GUI.skin.textArea)
+                _customFont = (Font)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Fonts/CourierPrime.ttf", typeof(Font));
+                if (_customFont != null)
                 {
-                    font = _customFont, fontSize = 14
-                };
+                    _textAreaStyle = new GUIStyle(GUI.skin.textArea)
+                    {
+                        font = _customFont, fontSize = 14
+                    };
+                }
+                else
+                {
+                    Debug.LogError("Failed to load Custom Font");
+                    _textAreaStyle = new GUIStyle(GUI.skin.textArea);
+                }
             }
             else
             {
-                Debug.LogError("Failed to load Custom Font");
                 _textAreaStyle = new GUIStyle(GUI.skin.textArea);
             }
         }
