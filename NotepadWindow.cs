@@ -62,9 +62,10 @@ namespace Plugins.Machination.Notepad
             
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Select File:");
-            _selectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
-            if (GUILayout.Button("Load"))
+            int newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
+            if (newSelectedFileIndex != _selectedFileIndex)
             {
+                _selectedFileIndex = newSelectedFileIndex;
                 _filePath = _files[_selectedFileIndex];
                 LoadTextFromFile();
             }
