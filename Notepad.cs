@@ -16,6 +16,13 @@ namespace Plugins.Machination.Notepad
         private string[] _files;
         private int _selectedFileIndex;
 
+        #region Text
+        private const string UnsavedChanges = "Unsaved Changes";
+        private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
+        private const string UnsavedYes = "Yes";
+        private const string UnsavedNo = "No";
+        #endregion
+
         [MenuItem(MenuDir + "Notepad")]
         public static void ShowWindow() { GetWindow<Notepad>("Notepad"); }
         
@@ -42,7 +49,7 @@ namespace Plugins.Machination.Notepad
         
         private void CheckForUnsavedChanges()
         {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog("Unsaved Changes", "You have unsaved changes. Do you want to save before quitting?", "Yes", "No"))
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
             {
                 SaveTextToFile();
             }
@@ -62,7 +69,7 @@ namespace Plugins.Machination.Notepad
             var newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
             if (newSelectedFileIndex != _selectedFileIndex)
             {
-                if (_hasUnsavedChanges && EditorUtility.DisplayDialog("Unsaved Changes", "You have unsaved changes. Do you want to save before switching files?", "Yes", "No"))
+                if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
                 {
                     SaveTextToFile();
                 }
@@ -158,7 +165,7 @@ namespace Plugins.Machination.Notepad
 
         private void CheckForUnsavedChangesBeforeCreatingNewFile()
         {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog("Unsaved Changes", "You have unsaved changes. Do you want to save before creating a new file?", "Yes", "No"))
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
             {
                 SaveTextToFile();
             }
