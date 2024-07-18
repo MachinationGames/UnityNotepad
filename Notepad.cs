@@ -8,7 +8,7 @@ namespace Plugins.Machination.Notepad
 {
     public class Notepad : EditorWindow
     {
-        private const string MenuDir = "Tools/Machination/";
+        private const string MenuDir = "Tools/Machination/Notepad/";
         private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
         private string _text = "";
         private static string _filePath = "NewNote";
@@ -19,22 +19,35 @@ namespace Plugins.Machination.Notepad
         private Font _customFont;
         private Vector2 _scrollPosition;
 
-        private static bool _useCustomFont = true;
+        private static bool UseCustomFont
+        {
+            get => EditorPrefs.GetBool("UseCustomFont", true);
+            set => EditorPrefs.SetBool("UseCustomFont", value);
+        }
 
         #region Text
+
+        private const string CustomFont = "Toggle Monospace Font";
         private const string UnsavedChanges = "Unsaved Changes";
         private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
         private const string UnsavedYes = "Yes";
         private const string UnsavedNo = "No";
         #endregion
 
-        [MenuItem(MenuDir + "Notepad")]
+        [MenuItem(MenuDir + "Open Notepad", false, 1)]
         public static void ShowWindow() { GetWindow<Notepad>("Notepad"); }
 
-        [MenuItem(MenuDir + "Toggle Custom Font")]
+        [MenuItem(MenuDir + CustomFont, false, 51)]
         private static void ToggleCustomFont()
         {
-            _useCustomFont = !_useCustomFont;
+            UseCustomFont = !UseCustomFont;
+        }
+
+        [MenuItem(MenuDir + CustomFont, true)]
+        private static bool ToggleCustomFontValidate()
+        {
+            Menu.SetChecked(MenuDir + CustomFont, UseCustomFont);
+            return true;
         }
         
         private void OnEnable()
@@ -43,6 +56,7 @@ namespace Plugins.Machination.Notepad
             LoadTextFromFile();
             EditorApplication.quitting += OnEditorQuitting;
         }
+        
         private void OnDisable()
         {
             EditorApplication.quitting -= OnEditorQuitting;
@@ -101,11 +115,8 @@ namespace Plugins.Machination.Notepad
             EditorGUILayout.EndHorizontal();
 
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
-
-            //EditorGUILayout.BeginHorizontal();
-            //DrawLineNumbers();
+            
             var newText = EditorGUILayout.TextArea(_text, _textAreaStyle, GUILayout.ExpandHeight(true));
-            //EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndScrollView();
             
             if (newText == _text) return;
@@ -216,7 +227,7 @@ namespace Plugins.Machination.Notepad
 
         private void LoadCustomFont()
         {
-            if (_useCustomFont)
+            if (UseCustomFont)
             {
                 _customFont = (Font)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Fonts/CourierPrime.ttf", typeof(Font));
                 if (_customFont != null)
