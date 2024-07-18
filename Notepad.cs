@@ -15,6 +15,9 @@ namespace Plugins.Machination.Notepad
         private bool _hasUnsavedChanges;
         private string[] _files;
         private int _selectedFileIndex;
+        private GUIStyle _textAreaStyle;
+        private Font _customFont;
+        private Vector2 _scrollPosition;
 
         #region Text
         private const string UnsavedChanges = "Unsaved Changes";
@@ -63,6 +66,7 @@ namespace Plugins.Machination.Notepad
         private void OnGUI()
         {
             HandleShortcuts();
+            LoadCustomFont();
             
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Select File:");
@@ -88,7 +92,14 @@ namespace Plugins.Machination.Notepad
             }
             EditorGUILayout.EndHorizontal();
 
-            var newText = EditorGUILayout.TextArea(_text, GUILayout.ExpandHeight(true));
+            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
+
+            //EditorGUILayout.BeginHorizontal();
+            //DrawLineNumbers();
+            var newText = EditorGUILayout.TextArea(_text, _textAreaStyle, GUILayout.ExpandHeight(true));
+            //EditorGUILayout.EndHorizontal();
+            EditorGUILayout.EndScrollView();
+            
             if (newText == _text) return;
             _text = newText;
             _hasUnsavedChanges = true;
@@ -192,6 +203,24 @@ namespace Plugins.Machination.Notepad
             else
             {
                 EditorUtility.DisplayDialog("File Exists", "A file with that name already exists. Please choose a different name.", "OK");
+            }
+        }
+
+        private void LoadCustomFont()
+        {
+            _customFont = (Font)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Fonts/CourierPrime.ttf",
+                typeof(Font));
+            if (_customFont != null)
+            {
+                _textAreaStyle = new GUIStyle(GUI.skin.textArea)
+                {
+                    font = _customFont, fontSize = 14
+                };
+            }
+            else
+            {
+                Debug.LogError("Failed to load Custom Font");
+                _textAreaStyle = new GUIStyle(GUI.skin.textArea);
             }
         }
     }
