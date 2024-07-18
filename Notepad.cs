@@ -59,7 +59,7 @@ namespace Plugins.Machination.Notepad
             
             EditorGUILayout.BeginHorizontal();
             GUILayout.Label("Select File:");
-            int newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
+            var newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
             if (newSelectedFileIndex != _selectedFileIndex)
             {
                 if (_hasUnsavedChanges && EditorUtility.DisplayDialog("Unsaved Changes", "You have unsaved changes. Do you want to save before switching files?", "Yes", "No"))
@@ -82,12 +82,10 @@ namespace Plugins.Machination.Notepad
             EditorGUILayout.EndHorizontal();
 
             var newText = EditorGUILayout.TextArea(_text, GUILayout.ExpandHeight(true));
-            if (newText != _text)
-            {
-                _text = newText;
-                _hasUnsavedChanges = true;
-                UpdateWindowTitle();
-            }
+            if (newText == _text) return;
+            _text = newText;
+            _hasUnsavedChanges = true;
+            UpdateWindowTitle();
         }
 
         private void HandleShortcuts()
@@ -145,15 +143,11 @@ namespace Plugins.Machination.Notepad
                                   .Where(file => !file.EndsWith(".meta"))
                                   .Select(Path.GetFileName)
                                   .ToArray();
-                if (_files.Length > 0)
-                {
-                    _selectedFileIndex = Array.IndexOf(_files, _filePath);
-                    if (_selectedFileIndex == -1)
-                    {
-                        _selectedFileIndex = 0;
-                        _filePath = _files[_selectedFileIndex];
-                    }
-                }
+                if (_files.Length <= 0) return;
+                _selectedFileIndex = Array.IndexOf(_files, _filePath);
+                if (_selectedFileIndex != -1) return;
+                _selectedFileIndex = 0;
+                _filePath = _files[_selectedFileIndex];
             }
             else
             {
@@ -173,26 +167,24 @@ namespace Plugins.Machination.Notepad
 
         private void CreateNewFile()
         {
-            string newFileName = EditorUtility.SaveFilePanel("Create New File", "Assets/" + NotesFolder, "NewNote", "txt");
-            if (!string.IsNullOrEmpty(newFileName))
+            var newFileName = EditorUtility.SaveFilePanel("Create New File", "Assets/" + NotesFolder, "NewNote", "txt");
+            if (string.IsNullOrEmpty(newFileName)) return;
+            newFileName = Path.GetFileName(newFileName);
+            var fullPath = Path.Combine("Assets", NotesFolder, newFileName);
+            if (!File.Exists(fullPath))
             {
-                newFileName = Path.GetFileName(newFileName);
-                var fullPath = Path.Combine("Assets", NotesFolder, newFileName);
-                if (!File.Exists(fullPath))
-                {
-                    File.WriteAllText(fullPath, "");
-                    AssetDatabase.Refresh();
-                    LoadFiles();
-                    _selectedFileIndex = Array.IndexOf(_files, newFileName);
-                    _filePath = newFileName;
-                    _text = "";
-                    _hasUnsavedChanges = false;
-                    UpdateWindowTitle();
-                }
-                else
-                {
-                    EditorUtility.DisplayDialog("File Exists", "A file with that name already exists. Please choose a different name.", "OK");
-                }
+                File.WriteAllText(fullPath, "");
+                AssetDatabase.Refresh();
+                LoadFiles();
+                _selectedFileIndex = Array.IndexOf(_files, newFileName);
+                _filePath = newFileName;
+                _text = "";
+                _hasUnsavedChanges = false;
+                UpdateWindowTitle();
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("File Exists", "A file with that name already exists. Please choose a different name.", "OK");
             }
         }
     }
