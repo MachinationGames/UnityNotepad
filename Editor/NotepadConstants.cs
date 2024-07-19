@@ -22,8 +22,6 @@ namespace Plugins.Machination.Notepad
         // Labels
         public const string NotepadTitle = "Notepad";
         public const string SelectFile = "Select File:";
-        public const string ReloadButton = "Reload";
-        public const string NewFileButton = "New File";
         public const string CreateNewFileDialog = "Create New File";
         public const string NewNoteDefaultName = "NewNote";
         public const string FontSizeLabel = "Font Size:";

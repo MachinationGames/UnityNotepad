@@ -19,6 +19,9 @@ namespace Plugins.Machination.Notepad
         private Vector2 _scrollPosition;
         private int _fontSize = 14;
         //private string _fontSizeInput = "14"; //Used for unused FontSize Input Field
+        private Texture2D _reloadButtonTexture;
+        private Texture2D _newFileButtonTexture;
+        private GUIStyle _buttonStyle;
         #endregion
 
         #region Properties
@@ -57,6 +60,7 @@ namespace Plugins.Machination.Notepad
         {
             LoadFiles();
             LoadTextFromFile();
+            LoadTextures();
             EditorApplication.quitting += OnEditorQuitting;
         }
         
@@ -68,11 +72,12 @@ namespace Plugins.Machination.Notepad
         {
             HandleShortcuts();
             LoadCustomFont();
+            SetupStyles();
             
             EditorGUILayout.BeginHorizontal();
             RenderFileSelection();
-            if (GUILayout.Button(NotepadConstants.ReloadButton)) { LoadFiles(); }
-            if (GUILayout.Button(NotepadConstants.NewFileButton)) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
+            if (GUILayout.Button(_reloadButtonTexture, _buttonStyle)) { LoadFiles(); }
+            if (GUILayout.Button(_newFileButtonTexture, _buttonStyle)) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
@@ -259,6 +264,22 @@ namespace Plugins.Machination.Notepad
             {
                 _textAreaStyle = new GUIStyle(GUI.skin.textArea);
             }
+        }
+        
+        private void LoadTextures()
+        {
+            _reloadButtonTexture = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/reload.png", typeof(Texture2D));
+            _newFileButtonTexture = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/newfile.png", typeof(Texture2D));
+        }
+        
+        private void SetupStyles()
+        {
+            _buttonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fixedWidth = 24,
+                fixedHeight = 24,
+                padding = new RectOffset(0, 0, 0, 0)
+            };
         }
 
         private void RenderFontSizeInput()
