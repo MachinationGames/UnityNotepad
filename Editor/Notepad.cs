@@ -8,19 +8,9 @@ namespace Plugins.Machination.Notepad
 {
     public class Notepad : EditorWindow
     {
-        #region Constants
-        private const string MenuDir = "Tools/Machination/Notepad/";
-        private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
-        private const string CustomFont = "Toggle Monospace Font";
-        private const string UnsavedChanges = "Unsaved Changes";
-        private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
-        private const string UnsavedYes = "Yes";
-        private const string UnsavedNo = "No";
-        #endregion
-
         #region Fields
         private string _text = "";
-        private static string _filePath = "NewNote";
+        private static string _filePath = NotepadConstants.NewNoteDefaultName;
         private bool _hasUnsavedChanges;
         private string[] _files;
         private int _selectedFileIndex;
@@ -40,24 +30,24 @@ namespace Plugins.Machination.Notepad
         #endregion
 
         #region MenuItems
-        [MenuItem(MenuDir + "Open Notepad", false, 1)]
+        [MenuItem(NotepadConstants.MenuDir + "Open Notepad", false, 1)]
         public static void ShowWindow() 
         {
-            var window = GetWindow<Notepad>("Notepad");
-            var icon = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Resources/icon.png", typeof(Texture2D));
-            window.titleContent = icon != null ? new GUIContent("Notepad", icon) : new GUIContent("Notepad");
+            var window = GetWindow<Notepad>(NotepadConstants.NotepadTitle);
+            var icon = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/icon.png", typeof(Texture2D));
+            window.titleContent = icon != null ? new GUIContent(NotepadConstants.NotepadTitle, icon) : new GUIContent(NotepadConstants.NotepadTitle);
         }
 
-        [MenuItem(MenuDir + CustomFont, false, 51)]
+        [MenuItem(NotepadConstants.MenuDir + NotepadConstants.CustomFont, false, 51)]
         private static void ToggleCustomFont()
         {
             UseCustomFont = !UseCustomFont;
         }
 
-        [MenuItem(MenuDir + CustomFont, true)]
+        [MenuItem(NotepadConstants.MenuDir + NotepadConstants.CustomFont, true)]
         private static bool ToggleCustomFontValidate()
         {
-            Menu.SetChecked(MenuDir + CustomFont, UseCustomFont);
+            Menu.SetChecked(NotepadConstants.MenuDir + NotepadConstants.CustomFont, UseCustomFont);
             return true;
         }
         #endregion
@@ -81,8 +71,8 @@ namespace Plugins.Machination.Notepad
             
             EditorGUILayout.BeginHorizontal();
             RenderFileSelection();
-            if (GUILayout.Button("Reload")) { LoadFiles(); }
-            if (GUILayout.Button("New File")) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
+            if (GUILayout.Button(NotepadConstants.ReloadButton)) { LoadFiles(); }
+            if (GUILayout.Button(NotepadConstants.NewFileButton)) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
@@ -101,7 +91,7 @@ namespace Plugins.Machination.Notepad
 
         private void CheckForUnsavedChanges()
         {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
             {
                 SaveTextToFile();
             }
@@ -109,7 +99,7 @@ namespace Plugins.Machination.Notepad
 
         private void UpdateWindowTitle() 
         {
-            titleContent.text = "Notepad" + (_hasUnsavedChanges ? " *" : ""); 
+            titleContent.text = NotepadConstants.NotepadTitle + (_hasUnsavedChanges ? " *" : ""); 
         }
 
         private void RenderTextArea()
@@ -127,7 +117,7 @@ namespace Plugins.Machination.Notepad
 
         private void RenderFileSelection()
         {
-            GUILayout.Label("Select File:");
+            GUILayout.Label(NotepadConstants.SelectFile);
             var newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
             if (newSelectedFileIndex != _selectedFileIndex)
             {
@@ -137,7 +127,7 @@ namespace Plugins.Machination.Notepad
 
         private void HandleFileSelectionChange(int newSelectedFileIndex)
         {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
             {
                 SaveTextToFile();
             }
@@ -159,7 +149,7 @@ namespace Plugins.Machination.Notepad
         {
             try
             {
-                var fullPath = Path.Combine("Assets", NotesFolder, _filePath);
+                var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", _filePath);
                 File.WriteAllText(fullPath, _text);
                 AssetDatabase.Refresh();
                 _hasUnsavedChanges = false;
@@ -167,7 +157,7 @@ namespace Plugins.Machination.Notepad
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed to save Notepad: " + e.Message);
+                Debug.LogError(NotepadConstants.SaveError + e.Message);
             }
         }
 
@@ -175,7 +165,7 @@ namespace Plugins.Machination.Notepad
         {
             try
             {
-                var fullPath = Path.Combine("Assets", NotesFolder, _filePath);
+                var fullPath = Path.Combine(NotepadConstants.NotepadFolder, "Notes", _filePath);
                 if (File.Exists(fullPath))
                 {
                     _text = File.ReadAllText(fullPath);
@@ -184,18 +174,18 @@ namespace Plugins.Machination.Notepad
                 }
                 else
                 {
-                    Debug.LogWarning("Notepad file not found: " + fullPath);
+                    Debug.LogWarning(NotepadConstants.FileNotFound + fullPath);
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed to load Notepad: " + e.Message);
+                Debug.LogError(NotepadConstants.LoadError + e.Message);
             }
         }
 
         private void LoadFiles()
         {
-            var notesFolderFullPath = Path.Combine("Assets", NotesFolder);
+            var notesFolderFullPath = Path.Combine(NotepadConstants.NotepadFolder, "Notes");
             if (Directory.Exists(notesFolderFullPath))
             {
                 _files = Directory.GetFiles(notesFolderFullPath)
@@ -211,13 +201,13 @@ namespace Plugins.Machination.Notepad
             else
             {
                 _files = Array.Empty<string>();
-                Debug.LogWarning("Notes folder not found: " + notesFolderFullPath);
+                Debug.LogWarning(NotepadConstants.NotesFolderNotFound + notesFolderFullPath);
             }
         }
 
         private void CheckForUnsavedChangesBeforeCreatingNewFile()
         {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
             {
                 SaveTextToFile();
             }
@@ -226,10 +216,10 @@ namespace Plugins.Machination.Notepad
 
         private void CreateNewFile()
         {
-            var newFileName = EditorUtility.SaveFilePanel("Create New File", "Assets/" + NotesFolder, "NewNote", "txt");
+            var newFileName = EditorUtility.SaveFilePanel(NotepadConstants.CreateNewFileDialog, NotepadConstants.NotepadFolder + "/Notes", NotepadConstants.NewNoteDefaultName, "txt");
             if (string.IsNullOrEmpty(newFileName)) return;
             newFileName = Path.GetFileName(newFileName);
-            var fullPath = Path.Combine("Assets", NotesFolder, newFileName);
+            var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", newFileName);
             if (!File.Exists(fullPath))
             {
                 File.WriteAllText(fullPath, "");
@@ -243,7 +233,7 @@ namespace Plugins.Machination.Notepad
             }
             else
             {
-                EditorUtility.DisplayDialog("File Exists", "A file with that name already exists. Please choose a different name.", "OK");
+                EditorUtility.DisplayDialog(NotepadConstants.FileExistsTitle, NotepadConstants.FileExistsMessage, NotepadConstants.UnsavedNo);
             }
         }
 
@@ -251,7 +241,7 @@ namespace Plugins.Machination.Notepad
         {
             if (UseCustomFont)
             {
-                _customFont = (Font)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Fonts/CourierPrime.ttf", typeof(Font));
+                _customFont = (Font)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Fonts/CourierPrime.ttf", typeof(Font));
                 if (_customFont)
                 {
                     _textAreaStyle = new GUIStyle(GUI.skin.textArea)
@@ -261,7 +251,7 @@ namespace Plugins.Machination.Notepad
                 }
                 else
                 {
-                    Debug.LogError("Failed to load Custom Font");
+                    Debug.LogError(NotepadConstants.FontLoadError);
                     _textAreaStyle = new GUIStyle(GUI.skin.textArea);
                 }
             }
@@ -273,7 +263,7 @@ namespace Plugins.Machination.Notepad
 
         private void RenderFontSizeInput()
         {
-            GUILayout.Label("Font Size:");
+            GUILayout.Label(NotepadConstants.FontSizeLabel);
             _fontSize = EditorGUILayout.IntSlider(_fontSize, 10, 30);
 
             // Input Field Option
