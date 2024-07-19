@@ -1,6 +1,8 @@
 # Unity Notepad Editor Window
 
 This Unity Editor extension provides a simple notepad window within the Unity Editor. It allows you to create, edit, and save text files directly in the Unity environment.
+![Screenshot_24](https://github.com/user-attachments/assets/a84e24dd-8db9-4007-a1b1-9150dc9ae309)
+
 
 ## Features
 - **Monospace Font**: Toggle between Unity and the Monospace Font included in the Fonts folder.
