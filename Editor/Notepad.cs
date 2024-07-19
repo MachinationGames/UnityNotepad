@@ -76,8 +76,8 @@ namespace Plugins.Machination.Notepad
             
             EditorGUILayout.BeginHorizontal();
             RenderFileSelection();
-            if (GUILayout.Button(_reloadButtonTexture, _buttonStyle)) { LoadFiles(); }
-            if (GUILayout.Button(_newFileButtonTexture, _buttonStyle)) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
+            if (GUILayout.Button(new GUIContent(_reloadButtonTexture, "Reload files"), _buttonStyle)) { LoadFiles(); }
+            if (GUILayout.Button(new GUIContent(_newFileButtonTexture, "Create new file"), _buttonStyle)) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
