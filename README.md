@@ -9,6 +9,11 @@ This Unity Editor extension provides a simple notepad window within the Unity Ed
 - **Reload Button**: Refresh the dropdown to include newly added files.
 - **Create New File**: Quickly create new text files with a unique timestamped name.
 
+## Supported File Types
+- **.txt**: Standard text files.
+- **.md**: Markdown files.
+- Other similar text-based files.
+
 ## Installation
 - Download the latest release
 - Import package into Unity
