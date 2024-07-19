@@ -36,7 +36,12 @@ namespace Plugins.Machination.Notepad
         #endregion
 
         [MenuItem(MenuDir + "Open Notepad", false, 1)]
-        public static void ShowWindow() { GetWindow<Notepad>("Notepad"); }
+        public static void ShowWindow() 
+        {
+            var window = GetWindow<Notepad>("Notepad");
+            var icon = (Texture2D)AssetDatabase.LoadAssetAtPath("Assets/Plugins/Machination/Notepad/Resources/icon.png", typeof(Texture2D));
+            window.titleContent = icon != null ? new GUIContent("Notepad", icon) : new GUIContent("Notepad");
+        }
 
         [MenuItem(MenuDir + CustomFont, false, 51)]
         private static void ToggleCustomFont()
