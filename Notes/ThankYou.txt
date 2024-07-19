@@ -1,0 +1,7 @@
+Thank you for using Unity Notepad!
+
+I hope this tool enhances your Unity development experience by providing a simple and convenient way to manage your text files. If you find this tool helpful, please consider giving the GitHub page a star.
+
+https://github.com/MidooriTV/UnityNotepad
+
+Happy coding!

@@ -8,8 +8,17 @@ namespace Plugins.Machination.Notepad
 {
     public class Notepad : EditorWindow
     {
+        #region Constants
         private const string MenuDir = "Tools/Machination/Notepad/";
         private const string NotesFolder = "Plugins/Machination/Notepad/Notes";
+        private const string CustomFont = "Toggle Monospace Font";
+        private const string UnsavedChanges = "Unsaved Changes";
+        private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
+        private const string UnsavedYes = "Yes";
+        private const string UnsavedNo = "No";
+        #endregion
+
+        #region Fields
         private string _text = "";
         private static string _filePath = "NewNote";
         private bool _hasUnsavedChanges;
@@ -19,22 +28,18 @@ namespace Plugins.Machination.Notepad
         private Font _customFont;
         private Vector2 _scrollPosition;
         private int _fontSize = 14;
-        private string _fontSizeInput = "14";
+        //private string _fontSizeInput = "14"; //Used for unused FontSize Input Field
+        #endregion
 
+        #region Properties
         private static bool UseCustomFont
         {
             get => EditorPrefs.GetBool("UseCustomFont", true);
             set => EditorPrefs.SetBool("UseCustomFont", value);
         }
-
-        #region Text
-        private const string CustomFont = "Toggle Monospace Font";
-        private const string UnsavedChanges = "Unsaved Changes";
-        private const string UnsavedMessage = "You have unsaved changes. Do you want to save before creating a new file?";
-        private const string UnsavedYes = "Yes";
-        private const string UnsavedNo = "No";
         #endregion
 
+        #region MenuItems
         [MenuItem(MenuDir + "Open Notepad", false, 1)]
         public static void ShowWindow() 
         {
@@ -55,7 +60,9 @@ namespace Plugins.Machination.Notepad
             Menu.SetChecked(MenuDir + CustomFont, UseCustomFont);
             return true;
         }
-        
+        #endregion
+
+        #region Unity Methods
         private void OnEnable()
         {
             LoadFiles();
@@ -64,20 +71,8 @@ namespace Plugins.Machination.Notepad
         }
         
         private void OnDisable() { EditorApplication.quitting -= OnEditorQuitting; }
-        
-        private void OnEditorQuitting() { CheckForUnsavedChanges(); }
-        
+
         private void OnDestroy() { CheckForUnsavedChanges(); }
-        
-        private void CheckForUnsavedChanges()
-        {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
-            {
-                SaveTextToFile();
-            }
-        }
-        
-        private void UpdateWindowTitle() { titleContent.text = "Notepad" + (_hasUnsavedChanges ? " *" : ""); }
 
         private void OnGUI()
         {
@@ -95,6 +90,26 @@ namespace Plugins.Machination.Notepad
             EditorGUILayout.EndHorizontal();
             
             RenderTextArea();
+        }
+        #endregion
+
+        #region Methods
+        private void OnEditorQuitting() 
+        {
+            CheckForUnsavedChanges();
+        }
+
+        private void CheckForUnsavedChanges()
+        {
+            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(UnsavedChanges, UnsavedMessage, UnsavedYes, UnsavedNo))
+            {
+                SaveTextToFile();
+            }
+        }
+
+        private void UpdateWindowTitle() 
+        {
+            titleContent.text = "Notepad" + (_hasUnsavedChanges ? " *" : ""); 
         }
 
         private void RenderTextArea()
@@ -268,5 +283,6 @@ namespace Plugins.Machination.Notepad
             // _fontSize = Mathf.Clamp(newFontSize, 10, 30);
             // LoadCustomFont();
         }
+        #endregion
     }
 }
