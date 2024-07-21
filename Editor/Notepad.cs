@@ -1,19 +1,197 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PlasticGui.WorkspaceWindow.Diff;
 using UnityEditor;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 
 namespace Plugins.Machination.Notepad
 {
-    public class Notepad : EditorWindow
+    /// <summary>
+    /// Simplest of Observer pattern Interfaces for the simplest of use cases.
+    /// 
+    /// Utilized by NotepadModel to notify Notepad that state has changed.
+    /// 
+    /// Todo: Replace this with events, proper Rx, or remove it.
+    /// </summary>
+    public interface IModelObserver
+    {
+        /**
+         */
+        void ModelUpdated() { }
+    }
+    /// <summary>
+    /// Notepad Model handles are business logic for Notepad such as managing
+    /// Text, current file, file list, Loading files, saving etc.
+    /// </summary>
+    public class NotepadModel 
+    {
+        public string Text { get; private set; } = "";
+
+        public string FilePath { get; private set; } = NotepadConstants.NewNoteDefaultName;
+
+        public bool HasUnsavedChanges { get; private set; } = false;
+
+        public List<string> Files { get; private set; } = new();
+
+        public int SelectedFileIndex { get; private set; } = 0;
+
+        private IModelObserver view;
+        public NotepadModel(IModelObserver view)
+        {
+            this.view = view;
+        }
+
+        public void Init()
+        {
+            this.LoadFiles();
+            this.LoadTextFromFile();
+        }
+
+        public void SelectFileFromList(int index)
+        {
+            // do nothing if it was already selected
+            if(SelectedFileIndex == index) return;
+
+            if (HasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
+            {
+                SaveTextToFile();
+            }
+
+            SelectedFileIndex = index;
+            FilePath = Files[SelectedFileIndex];
+            LoadTextFromFile();
+        }
+
+        public void UpdateTextIfChanged(string text)
+        {
+            bool different = Text != text;
+            if(!different) return;
+            Text = text;
+            if(different) HasUnsavedChanges = different;
+            if(different) view.ModelUpdated();
+        }
+        public void LoadFiles()
+        {
+            var notesFolderFullPath = Path.Combine(NotepadConstants.NotepadFolder, "Notes");
+            if (Directory.Exists(notesFolderFullPath))
+            {
+                Files = Directory.GetFiles(notesFolderFullPath)
+                                  .Where(file => !file.EndsWith(".meta"))
+                                  .Select(Path.GetFileName)
+                                  .ToList<string>();
+                if (Files.Count() == 0) return;
+                SelectedFileIndex = Files.FindIndex(x => x == FilePath);
+                if (SelectedFileIndex != -1) return;
+                SelectedFileIndex = 0;
+                FilePath = Files[SelectedFileIndex];
+                view.ModelUpdated();
+            }
+            else
+            {
+                Files = new();
+                Debug.LogWarning(NotepadConstants.NotesFolderNotFound + notesFolderFullPath);
+            }
+        }
+        public bool SaveTextToFile()
+        {
+            try
+            {
+                var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", FilePath);
+                File.WriteAllText(fullPath, Text);
+                AssetDatabase.Refresh();
+                HasUnsavedChanges = false;
+                view.ModelUpdated();
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(NotepadConstants.SaveError + e.Message);
+                return false;
+            }
+        }
+        public bool LoadTextFromFile()
+        {
+            try
+            {
+                var fullPath = Path.Combine(NotepadConstants.NotepadFolder, "Notes", FilePath);
+                if (File.Exists(fullPath))
+                {
+                    Text = File.ReadAllText(fullPath);
+                    HasUnsavedChanges = false;
+                    view.ModelUpdated();
+                    return true;
+                }
+                else
+                {
+                    Debug.LogWarning(NotepadConstants.FileNotFound + fullPath);
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(NotepadConstants.LoadError + e.Message);
+                return false;
+            }
+        }
+        public bool CreateNewFile()
+        {
+            var newFileName = EditorUtility.SaveFilePanel(NotepadConstants.CreateNewFileDialog, NotepadConstants.NotepadFolder + "/Notes", NotepadConstants.NewNoteDefaultName, "txt");
+            if (string.IsNullOrEmpty(newFileName)) return false;
+            newFileName = Path.GetFileName(newFileName);
+            var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", newFileName);
+            if (!File.Exists(fullPath))
+            {
+                File.WriteAllText(fullPath, "");
+                AssetDatabase.Refresh();
+                LoadFiles();
+                SelectedFileIndex = Files.FindIndex(name => name == newFileName);
+                FilePath = newFileName;
+                Text = "";
+                HasUnsavedChanges = false;
+                view.ModelUpdated();
+                return true;
+            }
+            else
+            {
+                EditorUtility.DisplayDialog(NotepadConstants.FileExistsTitle, NotepadConstants.FileExistsMessage, NotepadConstants.UnsavedNo);
+                return false;
+            }
+        }
+        public void CheckForUnsavedChangesBeforeCreatingNewFile()
+        {
+            if (HasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedNewFileMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
+            {
+                SaveTextToFile();
+            }
+            CreateNewFile();
+        }
+        public void CheckForUnsavedChanges()
+        {
+            if (HasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
+            {
+                SaveTextToFile();
+            }
+        }
+        public void OnDestroy()
+        {
+            CheckForUnsavedChanges();           
+        }
+    }
+
+    /// <summary>
+    /// Notepad. 
+    ///  
+    /// Directly Interfaces in Unity. Tries to only handle UI logic while pushing all logic to NotepadModel
+    /// </summary>
+    public class Notepad : EditorWindow, IModelObserver
     {
         #region Fields
-        private string _text = "";
-        private static string _filePath = NotepadConstants.NewNoteDefaultName;
-        private bool _hasUnsavedChanges;
-        private string[] _files;
-        private int _selectedFileIndex;
+
+        private NotepadModel _model = null;
         private GUIStyle _textAreaStyle;
         private Font _customFont;
         private Vector2 _scrollPosition;
@@ -58,26 +236,34 @@ namespace Plugins.Machination.Notepad
         #region Unity Methods
         private void OnEnable()
         {
-            LoadFiles();
-            LoadTextFromFile();
+            if(_model == null) {
+                _model = new(this);
+                _model.Init();
+            }
+
             LoadTextures();
             EditorApplication.quitting += OnEditorQuitting;
         }
         
         private void OnDisable() { EditorApplication.quitting -= OnEditorQuitting; }
 
-        private void OnDestroy() { CheckForUnsavedChanges(); }
+
+        private void OnDestroy() {  _model.OnDestroy(); }
 
         private void OnGUI()
         {
+            if(_model == null) {
+                _model = new(this);
+            }
+
             HandleShortcuts();
             LoadCustomFont();
             SetupStyles();
             
             EditorGUILayout.BeginHorizontal();
             RenderFileSelection();
-            if (GUILayout.Button(new GUIContent(_reloadButtonTexture, "Reload files"), _buttonStyle)) { LoadFiles(); }
-            if (GUILayout.Button(new GUIContent(_newFileButtonTexture, "Create new file"), _buttonStyle)) { CheckForUnsavedChangesBeforeCreatingNewFile(); }
+            if (GUILayout.Button(new GUIContent(_reloadButtonTexture, "Reload files"), _buttonStyle)) { _model.LoadFiles(); }
+            if (GUILayout.Button(new GUIContent(_newFileButtonTexture, "Create new file"), _buttonStyle)) { _model.CheckForUnsavedChangesBeforeCreatingNewFile(); }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.BeginHorizontal();
@@ -91,55 +277,35 @@ namespace Plugins.Machination.Notepad
         #region Methods
         private void OnEditorQuitting() 
         {
-            CheckForUnsavedChanges();
+            _model.CheckForUnsavedChanges();
         }
 
-        private void CheckForUnsavedChanges()
+
+        public void ModelUpdated()
         {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
-            {
-                SaveTextToFile();
-            }
+            UpdateWindowTitle();
         }
 
         private void UpdateWindowTitle() 
         {
-            titleContent.text = NotepadConstants.NotepadTitle + (_hasUnsavedChanges ? " *" : ""); 
+            titleContent.text = NotepadConstants.NotepadTitle + (_model.HasUnsavedChanges ? " *" : ""); 
         }
 
         private void RenderTextArea()
         {
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
             
-            var newText = EditorGUILayout.TextArea(_text, _textAreaStyle, GUILayout.ExpandHeight(true));
+            var newText = EditorGUILayout.TextArea(_model.Text, _textAreaStyle, GUILayout.ExpandHeight(true));
             EditorGUILayout.EndScrollView();
-            
-            if (newText == _text) return;
-            _text = newText;
-            _hasUnsavedChanges = true;
-            UpdateWindowTitle();
+
+            _model.UpdateTextIfChanged(newText);
         }
 
         private void RenderFileSelection()
         {
             GUILayout.Label(NotepadConstants.SelectFile);
-            var newSelectedFileIndex = EditorGUILayout.Popup(_selectedFileIndex, _files);
-            if (newSelectedFileIndex != _selectedFileIndex)
-            {
-                HandleFileSelectionChange(newSelectedFileIndex);
-            }
-        }
-
-        private void HandleFileSelectionChange(int newSelectedFileIndex)
-        {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
-            {
-                SaveTextToFile();
-            }
-
-            _selectedFileIndex = newSelectedFileIndex;
-            _filePath = _files[_selectedFileIndex];
-            LoadTextFromFile();
+            var newSelectedFileIndex = EditorGUILayout.Popup(_model.SelectedFileIndex, _model.Files.AsEnumerable().ToArray<string>());
+            _model.SelectFileFromList(newSelectedFileIndex);
         }
 
         private void HandleShortcuts()
@@ -147,100 +313,9 @@ namespace Plugins.Machination.Notepad
             var e = Event.current;
             if (e.type != EventType.KeyDown || (!e.control && !e.command) || e.keyCode != KeyCode.S) return;
             e.Use();
-            SaveTextToFile();
+            _model.SaveTextToFile();
         }
 
-        private void SaveTextToFile()
-        {
-            try
-            {
-                var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", _filePath);
-                File.WriteAllText(fullPath, _text);
-                AssetDatabase.Refresh();
-                _hasUnsavedChanges = false;
-                UpdateWindowTitle();
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(NotepadConstants.SaveError + e.Message);
-            }
-        }
-
-        private void LoadTextFromFile()
-        {
-            try
-            {
-                var fullPath = Path.Combine(NotepadConstants.NotepadFolder, "Notes", _filePath);
-                if (File.Exists(fullPath))
-                {
-                    _text = File.ReadAllText(fullPath);
-                    _hasUnsavedChanges = false;
-                    UpdateWindowTitle();
-                }
-                else
-                {
-                    Debug.LogWarning(NotepadConstants.FileNotFound + fullPath);
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.LogError(NotepadConstants.LoadError + e.Message);
-            }
-        }
-
-        private void LoadFiles()
-        {
-            var notesFolderFullPath = Path.Combine(NotepadConstants.NotepadFolder, "Notes");
-            if (Directory.Exists(notesFolderFullPath))
-            {
-                _files = Directory.GetFiles(notesFolderFullPath)
-                                  .Where(file => !file.EndsWith(".meta"))
-                                  .Select(Path.GetFileName)
-                                  .ToArray();
-                if (_files.Length <= 0) return;
-                _selectedFileIndex = Array.IndexOf(_files, _filePath);
-                if (_selectedFileIndex != -1) return;
-                _selectedFileIndex = 0;
-                _filePath = _files[_selectedFileIndex];
-            }
-            else
-            {
-                _files = Array.Empty<string>();
-                Debug.LogWarning(NotepadConstants.NotesFolderNotFound + notesFolderFullPath);
-            }
-        }
-
-        private void CheckForUnsavedChangesBeforeCreatingNewFile()
-        {
-            if (_hasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
-            {
-                SaveTextToFile();
-            }
-            CreateNewFile();
-        }
-
-        private void CreateNewFile()
-        {
-            var newFileName = EditorUtility.SaveFilePanel(NotepadConstants.CreateNewFileDialog, NotepadConstants.NotepadFolder + "/Notes", NotepadConstants.NewNoteDefaultName, "txt");
-            if (string.IsNullOrEmpty(newFileName)) return;
-            newFileName = Path.GetFileName(newFileName);
-            var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", newFileName);
-            if (!File.Exists(fullPath))
-            {
-                File.WriteAllText(fullPath, "");
-                AssetDatabase.Refresh();
-                LoadFiles();
-                _selectedFileIndex = Array.IndexOf(_files, newFileName);
-                _filePath = newFileName;
-                _text = "";
-                _hasUnsavedChanges = false;
-                UpdateWindowTitle();
-            }
-            else
-            {
-                EditorUtility.DisplayDialog(NotepadConstants.FileExistsTitle, NotepadConstants.FileExistsMessage, NotepadConstants.UnsavedNo);
-            }
-        }
 
         private void LoadCustomFont()
         {
