@@ -16,6 +16,8 @@ namespace Plugins.Machination.Notepad
         private Texture2D _newFileButtonTexture;
         private GUIStyle _buttonStyle;
 
+        private ColorSettings _colorSettings;
+
         private static bool UseCustomFont
         {
             get => EditorPrefs.GetBool("UseCustomFont", true);
@@ -52,6 +54,7 @@ namespace Plugins.Machination.Notepad
             }
 
             LoadTextures();
+            LoadColorSettings();
             EditorApplication.quitting += OnEditorQuitting;
         }
 
@@ -131,19 +134,46 @@ namespace Plugins.Machination.Notepad
                 {
                     _textAreaStyle = new GUIStyle(GUI.skin.textArea)
                     {
-                        font = _customFont, fontSize = _fontSize
+                        font = _customFont, fontSize = _fontSize,
+                        normal = { textColor = _colorSettings.textColor, background = MakeTex(1, 1, _colorSettings.backgroundColor) }
                     };
                 }
                 else
                 {
                     Debug.LogError(NotepadConstants.FontLoadError);
-                    _textAreaStyle = new GUIStyle(GUI.skin.textArea);
+                    _textAreaStyle = new GUIStyle(GUI.skin.textArea)
+                    {
+                        normal =
+                        {
+                            textColor = _colorSettings.textColor,
+                            background = MakeTex(1, 1, _colorSettings.backgroundColor)
+                        }
+                    };
                 }
             }
             else
             {
-                _textAreaStyle = new GUIStyle(GUI.skin.textArea);
+                _textAreaStyle = new GUIStyle(GUI.skin.textArea)
+                {
+                    normal =
+                    {
+                        textColor = _colorSettings.textColor, background = MakeTex(1, 1, _colorSettings.backgroundColor)
+                    }
+                };
             }
+        }
+
+        private static Texture2D MakeTex(int width, int height, Color col)
+        {
+            var size = new Color[width * height];
+            for (var i = 0; i < size.Length; i++)
+            {
+                size[i] = col;
+            }
+            var result = new Texture2D(width, height);
+            result.SetPixels(size);
+            result.Apply();
+            return result;
         }
 
         private void LoadTextures()
@@ -171,6 +201,16 @@ namespace Plugins.Machination.Notepad
         private void OnEditorQuitting()
         {
             _model.CheckForUnsavedChanges();
+        }
+
+        private void LoadColorSettings()
+        {
+            _colorSettings =
+                AssetDatabase.LoadAssetAtPath<ColorSettings>("Assets/Plugins/Machination/Notepad/ColorSettings.asset");
+            if (_colorSettings == null)
+            {
+                Debug.LogError("Notepad::ColorSettings is NULL");
+            }
         }
     }
 }
