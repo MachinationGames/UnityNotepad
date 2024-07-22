@@ -13,6 +13,11 @@ namespace Plugins.Machination.Notepad
             GetWindow<ColorSettingsEditor>("Color Settings");
         }
 
+        private void OnEnable()
+        {
+            LoadColorSettings();
+        }
+
         private void OnGUI()
         {
             GUILayout.Label("Edit Notepad Colors", EditorStyles.boldLabel);
@@ -24,9 +29,26 @@ namespace Plugins.Machination.Notepad
             _colorSettings.backgroundColor =
                 EditorGUILayout.ColorField("Background Color", _colorSettings.backgroundColor);
 
-            if (!GUILayout.Button("Save")) return;
-            EditorUtility.SetDirty(_colorSettings);
-            AssetDatabase.SaveAssets();
+            if (GUILayout.Button("Save"))
+            {
+                EditorUtility.SetDirty(_colorSettings);
+                AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                GUILayout.Label("No ColorSettings asset found.");
+            }
+        }
+
+        private void LoadColorSettings()
+        {
+            if (_colorSettings == null)
+            {
+                _colorSettings = CreateInstance<ColorSettings>();
+                AssetDatabase.CreateAsset(_colorSettings, NotepadConstants.ColorSettingsDir);
+                AssetDatabase.SaveAssets();
+            }
+            _colorSettings = AssetDatabase.LoadAssetAtPath<ColorSettings>(NotepadConstants.ColorSettingsDir);
         }
     }
 }

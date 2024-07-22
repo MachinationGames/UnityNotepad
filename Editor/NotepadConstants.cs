@@ -8,6 +8,9 @@ namespace Plugins.Machination.Notepad
 
         // Notepad Directory
         public const string NotepadFolder = "Assets/Plugins/Machination/Notepad";
+        
+        // ColorSettings Directory
+        public const string ColorSettingsDir = "Assets/Plugins/Machination/Notepad/ColorSettings.asset";
 
         // Menu Items
         public const string CustomFont = "Toggle Monospace Font";

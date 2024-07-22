@@ -116,6 +116,12 @@ namespace Plugins.Machination.Notepad
             var newSelectedFileIndex = EditorGUILayout.Popup(_model.SelectedFileIndex, _model.Files.AsEnumerable().ToArray());
             _model.SelectFileFromList(newSelectedFileIndex);
         }
+        
+        private void RenderFontSizeInput()
+        {
+            GUILayout.Label(NotepadConstants.FontSizeLabel);
+            _fontSize = EditorGUILayout.IntSlider(_fontSize, 10, 30);
+        }
 
         private void HandleShortcuts()
         {
@@ -192,12 +198,6 @@ namespace Plugins.Machination.Notepad
             };
         }
 
-        private void RenderFontSizeInput()
-        {
-            GUILayout.Label(NotepadConstants.FontSizeLabel);
-            _fontSize = EditorGUILayout.IntSlider(_fontSize, 10, 30);
-        }
-
         private void OnEditorQuitting()
         {
             _model.CheckForUnsavedChanges();
@@ -206,7 +206,7 @@ namespace Plugins.Machination.Notepad
         private void LoadColorSettings()
         {
             _colorSettings =
-                AssetDatabase.LoadAssetAtPath<ColorSettings>("Assets/Plugins/Machination/Notepad/ColorSettings.asset");
+                AssetDatabase.LoadAssetAtPath<ColorSettings>(NotepadConstants.ColorSettingsDir);
             if (_colorSettings == null)
             {
                 Debug.LogError("Notepad::ColorSettings is NULL");
