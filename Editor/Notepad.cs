@@ -205,12 +205,7 @@ namespace Plugins.Machination.Notepad
 
         private void LoadColorSettings()
         {
-            _colorSettings =
-                AssetDatabase.LoadAssetAtPath<ColorSettings>(NotepadConstants.ColorSettingsDir);
-            if (_colorSettings == null)
-            {
-                Debug.LogError("Notepad::ColorSettings is NULL");
-            }
+            _colorSettings = ColorSettingsProvider.Instance.ColorSettings;
         }
     }
 }

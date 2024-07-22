@@ -42,13 +42,8 @@ namespace Plugins.Machination.Notepad
 
         private void LoadColorSettings()
         {
-            if (_colorSettings == null)
-            {
-                _colorSettings = CreateInstance<ColorSettings>();
-                AssetDatabase.CreateAsset(_colorSettings, NotepadConstants.ColorSettingsDir);
-                AssetDatabase.SaveAssets();
-            }
-            _colorSettings = AssetDatabase.LoadAssetAtPath<ColorSettings>(NotepadConstants.ColorSettingsDir);
+
+            _colorSettings = ColorSettingsProvider.Instance.ColorSettings;
         }
     }
 }
