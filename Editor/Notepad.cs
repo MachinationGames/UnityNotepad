@@ -2,11 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PlasticGui.WorkspaceWindow.Diff;
 using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 namespace Plugins.Machination.Notepad
 {
@@ -31,24 +28,24 @@ namespace Plugins.Machination.Notepad
     {
         public string Text { get; private set; } = "";
 
-        public string FilePath { get; private set; } = NotepadConstants.NewNoteDefaultName;
+        private string FilePath { get; set; } = NotepadConstants.NewNoteDefaultName;
 
-        public bool HasUnsavedChanges { get; private set; } = false;
+        public bool HasUnsavedChanges { get; private set; }
 
         public List<string> Files { get; private set; } = new();
 
-        public int SelectedFileIndex { get; private set; } = 0;
+        public int SelectedFileIndex { get; private set; }
 
-        private IModelObserver view;
+        private readonly IModelObserver _view;
         public NotepadModel(IModelObserver view)
         {
-            this.view = view;
+            _view = view;
         }
 
         public void Init()
         {
-            this.LoadFiles();
-            this.LoadTextFromFile();
+            LoadFiles();
+            LoadTextFromFile();
         }
 
         public void SelectFileFromList(int index)
@@ -68,11 +65,11 @@ namespace Plugins.Machination.Notepad
 
         public void UpdateTextIfChanged(string text)
         {
-            bool different = Text != text;
+            var different = Text != text;
             if(!different) return;
             Text = text;
-            if(different) HasUnsavedChanges = different;
-            if(different) view.ModelUpdated();
+            HasUnsavedChanges = true;
+            _view.ModelUpdated();
         }
         public void LoadFiles()
         {
@@ -82,21 +79,21 @@ namespace Plugins.Machination.Notepad
                 Files = Directory.GetFiles(notesFolderFullPath)
                                   .Where(file => !file.EndsWith(".meta"))
                                   .Select(Path.GetFileName)
-                                  .ToList<string>();
-                if (Files.Count() == 0) return;
+                                  .ToList();
+                if (!Files.Any()) return;
                 SelectedFileIndex = Files.FindIndex(x => x == FilePath);
                 if (SelectedFileIndex != -1) return;
                 SelectedFileIndex = 0;
                 FilePath = Files[SelectedFileIndex];
-                view.ModelUpdated();
+                _view.ModelUpdated();
             }
             else
             {
-                Files = new();
+                Files = new List<string>();
                 Debug.LogWarning(NotepadConstants.NotesFolderNotFound + notesFolderFullPath);
             }
         }
-        public bool SaveTextToFile()
+        public void SaveTextToFile()
         {
             try
             {
@@ -104,16 +101,15 @@ namespace Plugins.Machination.Notepad
                 File.WriteAllText(fullPath, Text);
                 AssetDatabase.Refresh();
                 HasUnsavedChanges = false;
-                view.ModelUpdated();
-                return true;
+                _view.ModelUpdated();
             }
             catch (Exception e)
             {
                 Debug.LogError(NotepadConstants.SaveError + e.Message);
-                return false;
             }
         }
-        public bool LoadTextFromFile()
+
+        private void LoadTextFromFile()
         {
             try
             {
@@ -122,25 +118,21 @@ namespace Plugins.Machination.Notepad
                 {
                     Text = File.ReadAllText(fullPath);
                     HasUnsavedChanges = false;
-                    view.ModelUpdated();
-                    return true;
+                    _view.ModelUpdated();
+                    return;
                 }
-                else
-                {
-                    Debug.LogWarning(NotepadConstants.FileNotFound + fullPath);
-                    return false;
-                }
+                Debug.LogWarning(NotepadConstants.FileNotFound + fullPath);
             }
             catch (Exception e)
             {
                 Debug.LogError(NotepadConstants.LoadError + e.Message);
-                return false;
             }
         }
-        public bool CreateNewFile()
+
+        private void CreateNewFile()
         {
             var newFileName = EditorUtility.SaveFilePanel(NotepadConstants.CreateNewFileDialog, NotepadConstants.NotepadFolder + "/Notes", NotepadConstants.NewNoteDefaultName, "txt");
-            if (string.IsNullOrEmpty(newFileName)) return false;
+            if (string.IsNullOrEmpty(newFileName)) return;
             newFileName = Path.GetFileName(newFileName);
             var fullPath = Path.Combine(NotepadConstants.NotepadFolder + "/Notes", newFileName);
             if (!File.Exists(fullPath))
@@ -152,15 +144,14 @@ namespace Plugins.Machination.Notepad
                 FilePath = newFileName;
                 Text = "";
                 HasUnsavedChanges = false;
-                view.ModelUpdated();
-                return true;
+                _view.ModelUpdated();
             }
             else
             {
                 EditorUtility.DisplayDialog(NotepadConstants.FileExistsTitle, NotepadConstants.FileExistsMessage, NotepadConstants.UnsavedNo);
-                return false;
             }
         }
+        
         public void CheckForUnsavedChangesBeforeCreatingNewFile()
         {
             if (HasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedNewFileMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
@@ -169,6 +160,7 @@ namespace Plugins.Machination.Notepad
             }
             CreateNewFile();
         }
+        
         public void CheckForUnsavedChanges()
         {
             if (HasUnsavedChanges && EditorUtility.DisplayDialog(NotepadConstants.UnsavedChanges, NotepadConstants.UnsavedMessage, NotepadConstants.UnsavedYes, NotepadConstants.UnsavedNo))
@@ -176,6 +168,7 @@ namespace Plugins.Machination.Notepad
                 SaveTextToFile();
             }
         }
+        
         public void OnDestroy()
         {
             CheckForUnsavedChanges();           
@@ -191,7 +184,7 @@ namespace Plugins.Machination.Notepad
     {
         #region Fields
 
-        private NotepadModel _model = null;
+        private NotepadModel _model;
         private GUIStyle _textAreaStyle;
         private Font _customFont;
         private Vector2 _scrollPosition;
@@ -237,7 +230,7 @@ namespace Plugins.Machination.Notepad
         private void OnEnable()
         {
             if(_model == null) {
-                _model = new(this);
+                _model = new NotepadModel(this);
                 _model.Init();
             }
 
@@ -252,9 +245,7 @@ namespace Plugins.Machination.Notepad
 
         private void OnGUI()
         {
-            if(_model == null) {
-                _model = new(this);
-            }
+            _model ??= new NotepadModel(this);
 
             HandleShortcuts();
             LoadCustomFont();
@@ -304,7 +295,7 @@ namespace Plugins.Machination.Notepad
         private void RenderFileSelection()
         {
             GUILayout.Label(NotepadConstants.SelectFile);
-            var newSelectedFileIndex = EditorGUILayout.Popup(_model.SelectedFileIndex, _model.Files.AsEnumerable().ToArray<string>());
+            var newSelectedFileIndex = EditorGUILayout.Popup(_model.SelectedFileIndex, _model.Files.AsEnumerable().ToArray());
             _model.SelectFileFromList(newSelectedFileIndex);
         }
 
@@ -344,7 +335,7 @@ namespace Plugins.Machination.Notepad
         private void LoadTextures()
         {
             _reloadButtonTexture = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/reload.png", typeof(Texture2D));
-            _newFileButtonTexture = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/newfile.png", typeof(Texture2D));
+            _newFileButtonTexture = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/newFile.png", typeof(Texture2D));
         }
         
         private void SetupStyles()
@@ -361,13 +352,6 @@ namespace Plugins.Machination.Notepad
         {
             GUILayout.Label(NotepadConstants.FontSizeLabel);
             _fontSize = EditorGUILayout.IntSlider(_fontSize, 10, 30);
-
-            // Input Field Option
-            //_fontSizeInput = GUILayout.TextField(_fontSizeInput, GUILayout.Width(40));
-
-            // if (!int.TryParse(_fontSizeInput, out var newFontSize)) return;
-            // _fontSize = Mathf.Clamp(newFontSize, 10, 30);
-            // LoadCustomFont();
         }
         #endregion
     }
