@@ -16,13 +16,7 @@ namespace Plugins.Machination.Notepad
         private Texture2D _newFileButtonTexture;
         private GUIStyle _buttonStyle;
 
-        private ColorSettings _colorSettings;
-
-        private static bool UseCustomFont
-        {
-            get => EditorPrefs.GetBool("UseCustomFont", true);
-            set => EditorPrefs.SetBool("UseCustomFont", value);
-        }
+        private NotepadSettings _notepadSettings;
 
         [MenuItem(NotepadConstants.MenuDir + "Open Notepad", false, 1)]
         public static void ShowWindow()
@@ -30,19 +24,6 @@ namespace Plugins.Machination.Notepad
             var window = GetWindow<Notepad>(NotepadConstants.NotepadTitle);
             var icon = (Texture2D)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Resources/icon.png", typeof(Texture2D));
             window.titleContent = icon != null ? new GUIContent(NotepadConstants.NotepadTitle, icon) : new GUIContent(NotepadConstants.NotepadTitle);
-        }
-
-        [MenuItem(NotepadConstants.MenuDir + NotepadConstants.CustomFont, false, 51)]
-        private static void ToggleCustomFont()
-        {
-            UseCustomFont = !UseCustomFont;
-        }
-
-        [MenuItem(NotepadConstants.MenuDir + NotepadConstants.CustomFont, true)]
-        private static bool ToggleCustomFontValidate()
-        {
-            Menu.SetChecked(NotepadConstants.MenuDir + NotepadConstants.CustomFont, UseCustomFont);
-            return true;
         }
 
         private void OnEnable()
@@ -133,15 +114,21 @@ namespace Plugins.Machination.Notepad
 
         private void LoadCustomFont()
         {
-            if (UseCustomFont)
+            if (_notepadSettings.useCustomFont)
             {
-                _customFont = (Font)AssetDatabase.LoadAssetAtPath(NotepadConstants.NotepadFolder + "/Fonts/CourierPrime.ttf", typeof(Font));
+                var fontPath = AssetDatabase.FindAssets("t:Font", new[] { "Assets/Plugins/Machination/Notepad/Fonts" })
+                    .Select(AssetDatabase.GUIDToAssetPath).FirstOrDefault(path =>
+                        System.IO.Path.GetFileNameWithoutExtension(path) == _notepadSettings.selectedFont);
+                if (!string.IsNullOrEmpty(fontPath))
+                {
+                    _customFont = (Font)AssetDatabase.LoadAssetAtPath(fontPath, typeof(Font));
+                }
                 if (_customFont)
                 {
                     _textAreaStyle = new GUIStyle(GUI.skin.textArea)
                     {
                         font = _customFont, fontSize = _fontSize,
-                        normal = { textColor = _colorSettings.textColor, background = MakeTex(1, 1, _colorSettings.backgroundColor) }
+                        normal = { textColor = _notepadSettings.textColor, background = MakeTex(1, 1, _notepadSettings.backgroundColor) }
                     };
                 }
                 else
@@ -151,8 +138,8 @@ namespace Plugins.Machination.Notepad
                     {
                         normal =
                         {
-                            textColor = _colorSettings.textColor,
-                            background = MakeTex(1, 1, _colorSettings.backgroundColor)
+                            textColor = _notepadSettings.textColor,
+                            background = MakeTex(1, 1, _notepadSettings.backgroundColor)
                         }
                     };
                 }
@@ -163,7 +150,7 @@ namespace Plugins.Machination.Notepad
                 {
                     normal =
                     {
-                        textColor = _colorSettings.textColor, background = MakeTex(1, 1, _colorSettings.backgroundColor)
+                        textColor = _notepadSettings.textColor, background = MakeTex(1, 1, _notepadSettings.backgroundColor)
                     }
                 };
             }
@@ -205,9 +192,9 @@ namespace Plugins.Machination.Notepad
 
         private void LoadColorSettings()
         {
-            _colorSettings =
-                AssetDatabase.LoadAssetAtPath<ColorSettings>(NotepadConstants.ColorSettingsDir);
-            if (_colorSettings == null)
+            _notepadSettings =
+                AssetDatabase.LoadAssetAtPath<NotepadSettings>(NotepadConstants.ColorSettingsDir);
+            if (_notepadSettings == null)
             {
                 Debug.LogError("Notepad::ColorSettings is NULL");
             }

@@ -10,7 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 030968f4d8dd3d741ac50a7d53e3c1c0, type: 3}
-  m_Name: ColorSettings
+  m_Name: NotepadSettings
   m_EditorClassIdentifier: 
-  textColor: {r: 0.25663045, g: 0.6886792, b: 0.39091587, a: 1}
-  backgroundColor: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 1}
+  textColor: {r: 0.2242791, g: 0.754717, b: 0.25134224, a: 1}
+  backgroundColor: {r: 0.16470589, g: 0.16470589, b: 0.16470589, a: 1}
+  selectedFont: CourierPrime
+  useCustomFont: 1
