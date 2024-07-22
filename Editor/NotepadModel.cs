@@ -115,6 +115,7 @@ namespace Plugins.Machination.Notepad
                 {
                     Text = File.ReadAllText(fullPath);
                     HasUnsavedChanges = false;
+                    GUI.FocusControl(null);
                     _view.ModelUpdated();
                     return;
                 }
@@ -142,6 +143,7 @@ namespace Plugins.Machination.Notepad
                 FilePath = newFileName;
                 Text = "";
                 HasUnsavedChanges = false;
+                GUI.FocusControl(null);
                 _view.ModelUpdated();
             }
             else
