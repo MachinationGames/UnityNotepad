@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 namespace Plugins.Machination.Notepad
 {
     public static class NotepadConstants
@@ -35,3 +36,4 @@ namespace Plugins.Machination.Notepad
         public const string NotesFolderNotFound = "Notes folder not found: ";
     }
 }
+#endif

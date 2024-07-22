@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -173,3 +174,4 @@ namespace Plugins.Machination.Notepad
         }
     }
 }
+#endif
